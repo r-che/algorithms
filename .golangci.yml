@@ -1,0 +1,46 @@
+# https://golangci-lint.run/usage/configuration/#linters-configuration
+linters:
+  enable-all: true
+  disable:
+    # Disabled due to inconvenient rules
+    - exhaustivestruct
+    - funlen
+    - gci
+    - godot
+    - gofmt
+    - gofumpt
+    - goimports
+    - nlreturn
+    - testpackage
+    - varcheck
+    # Disabled because deprecated
+    - deadcode
+    - scopelint
+    - maligned
+    - nosnakecase
+    - interfacer
+    - ifshort
+    - golint
+    # Disabled because of generics. You can track the evolution of the generics support
+    # by following the https://github.com/golangci/golangci-lint/issues/2649
+    - rowserrcheck
+    - sqlclosecheck
+    - structcheck
+    - wastedassign
+
+    #
+    # Need to run manually to review
+    #
+    - exhaustruct
+    - goerr113
+    - wsl
+
+linters-settings:
+  # https://github.com/blizzy78/varnamelen#golangci-lint-integration
+  varnamelen:
+    max-distance: 20
+
+  # https://golangci-lint.run/usage/linters/#paralleltest
+  paralleltest:
+    ignore-missing: true
+
