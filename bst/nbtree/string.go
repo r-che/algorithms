@@ -13,21 +13,14 @@ const (
 	strEmptyTree	= `<tree-is-empty>`
 )
 
-//nolint:cyclop // Not sure that code will be more clear if this function is split into several
 func (t *BSTree) String() string {
 	if t.root == nil {
 		return strEmptyTree
 	}
 
-	// Collect all nodes into the matrix
-	levels := map[int][]*BSTNode{0: []*BSTNode{t.root}}
-	t.root.childKeys(1, levels)
-
-	// Map keys<=>position
-	positions := map[KeyType]int{}
-	for n, pos := t.Min(), 0; n != nil; n, pos = t.Successor(n), pos+1 {
-		positions[n.key] = pos
-	}
+	// Get a map with nodes separated by levels and
+	// a map with positions of keys in a linear ordering of keys
+	levels, positions := stringPrepareData(t)
 
 	// Tree width
 	width := len(positions)
@@ -48,8 +41,8 @@ func (t *BSTree) String() string {
 	cellWidth := len(" ") +  kw + len(" ")	// one space left + one space right of the key value
 	// Short stub that used to print cells that contain part of edges
 	stub := strings.Repeat(" ", kw)
-	// Long stub that used to print completely empty cells
-	stubFull := strings.Repeat(" ", cellWidth)
+	// Fragment of a branch with one cell width
+	branchFrag := strings.Repeat("_", cellWidth)
 
 	oLine := 0	// output matrix line
 	level := 0	// levels matrix line
@@ -59,46 +52,83 @@ func (t *BSTree) String() string {
 		oMatrix[oLine+1] = make([]string, width)
 		oMatrix[oLine+2] = make([]string, width)
 		for _, node := range levels[level] {
+			// Write node key to the output matrix
 			oMatrix[oLine][positions[node.key]] = " " + fmt.Sprintf(nFmt, node.key) + " "
-			switch {
-			case node.left != nil && node.right != nil:
-				oMatrix[oLine+1][positions[node.key]] = `/` + stub + `\`
-			case node.left != nil:
-				oMatrix[oLine+1][positions[node.key]] = `/` + stub + ` `
-			case node.right != nil:
-				oMatrix[oLine+1][positions[node.key]] = ` ` + stub + `\`
-			}
 
+			// Write the initial fragment of the branch from the children to its parent
+			stringInitBranchFrag(oMatrix[oLine+1], positions, node, stub)
+
+			// Is it a root node?
 			if node.parent == nil {
+				// Root has no parents, no need to draw connections to them
 				continue
 			}
 
-			// Number of cells between parent and child
-			nc := positions[node.key] - positions[node.parent.key]
-			switch {
-			// Node - LEFT child of its parent
-			case nc < 0:
+			// Determine direction of drawing
+			var step int
+			// Get the number of cells between parent and child
+			if nc := positions[node.key] - positions[node.parent.key]; nc < 0 {
+				// Node - LEFT child of its parent, need to draw branch to the right toward the parent
 				oMatrix[oLine-1][positions[node.key]] = ` ` + stub + `/`
-				for ni := positions[node.key] + 1; ni < positions[node.parent.key]; ni++ {
-					oMatrix[oLine-2][ni] = strings.Repeat("_", cellWidth)
-				}
-			// Node - RIGHT child of its parent
-			case nc > 0:
+				step = 1
+			} else {
+				// Node - RIGHT child of its parent, need to draw branch to the left toward the parent
 				oMatrix[oLine-1][positions[node.key]] = `\` + stub + ` `
-				for ni := positions[node.key] - 1; ni > positions[node.parent.key]; ni-- {
-					oMatrix[oLine-2][ni] = strings.Repeat("_", cellWidth)
-				}
+				step = -1
+			}
+
+			for ni := positions[node.key] + step; ni != positions[node.parent.key]; ni += step {
+				oMatrix[oLine-2][ni] = branchFrag
 			}
 		}
 	}
 
-	// Remove last two rows from oMatrix - it always empty
-	oMatrix = oMatrix[:len(oMatrix)-2]
+	return stringMakeOutput(oMatrix, cellWidth)
+}
+
+// stringPrepareData source data to create string representation of the tree. It returns:
+// levels -  map containing a set of levels (starting from the root - 0), each of that level
+//           contains list of corresponding nodes in ascending order
+// positions - map of key<=>position, when position is the position of corresponding key
+//             in the flat ordered list of tree's keys
+func stringPrepareData(t *BSTree ) (map[int][]*BSTNode, map[KeyType]int) {
+	// Collect all nodes into the matrix
+	levels := map[int][]*BSTNode{0: []*BSTNode{t.root}}
+	t.root.childKeys(1, levels)
+
+	// Map keys<=>position
+	positions := map[KeyType]int{}
+	for n, pos := t.Min(), 0; n != nil; n, pos = t.Successor(n), pos+1 {
+		positions[n.key] = pos
+	}
+
+	return levels, positions
+}
+
+// stringInitBranchFrag writes the initial fragment of branches to chilldren, if any
+func stringInitBranchFrag(row []string, positions map[KeyType]int, node *BSTNode, stub string) {
+	switch {
+	case node.left != nil && node.right != nil:
+		row[positions[node.key]] = `/` + stub + `\`
+	case node.left != nil:
+		row[positions[node.key]] = `/` + stub + ` `
+	case node.right != nil:
+		row[positions[node.key]] = ` ` + stub + `\`
+	}
+}
+
+// stringMakeOutput converts matrix-representation of the tree to the multiline string value
+func stringMakeOutput(matrix [][]string, cellWidth int) string {
+	// Remove last two rows from matrix - it always empty
+	matrix = matrix[:len(matrix)-2]
 
 	// Make output buffer
 	out := strings.Builder{}
 
-	for _, level := range oMatrix {
+	// Stub that used to print completely empty cells
+	stubFull := strings.Repeat(" ", cellWidth)
+
+	for _, level := range matrix {
 		for _, n := range level {
 			if n == "" {
 				out.WriteString(stubFull)
