@@ -3,9 +3,7 @@ package nbtree
 import "fmt"
 
 
-//
-// Key type
-//
+// KeyType represents the key type of a binary search tree node
 type KeyType int
 
 const (
@@ -26,9 +24,7 @@ func (k KeyType) String() string {
 	}
 }
 
-//
-// BSTNode type
-//
+// BSTNode implements a binary search tree node
 type BSTNode struct {
 	key		KeyType
 	left	*BSTNode
@@ -37,6 +33,8 @@ type BSTNode struct {
 
 	data any
 }
+
+// NewBSTNode creates a binary search tree node with key k  and associates the data with it
 func NewBSTNode(k KeyType, data any) *BSTNode {
 	return &BSTNode{key: k, data: data}
 }
@@ -47,6 +45,7 @@ func (n *BSTNode) String() string {
 	return n.key.String()
 }
 
+// Key returns the key value of the node
 func (n *BSTNode) Key() KeyType {
 	if n == nil {
 		return FakeNode
@@ -54,6 +53,7 @@ func (n *BSTNode) Key() KeyType {
 	return n.key
 }
 
+// Value returns the data associated with the node
 func (n *BSTNode) Value() any {
 	if n == nil {
 		return nil

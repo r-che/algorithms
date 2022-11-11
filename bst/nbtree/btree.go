@@ -1,16 +1,40 @@
+/*
+Package nbtree provides an example of a non-balanced binary search tree
+implementation.
+
+It supports standard tree procedures, such as: inserting and deleting nodes,
+finding nodes by given arbitrary key, finding the root, maximum and minimum
+nodes, finding the predecessor and successor of a node.
+
+It supports colored output of graphical representation of the tree using ASCII
+graphics. For example, a tree with the keys 20, 10, 30, 5, 15, 25, 35, 8, 17,
+37, 33, 13, 2, 23, 27 added sequentially will look like this:
+
+                             20
+                ____________/  \____________
+               /                            \
+             10                              30
+        ____/  \____                    ____/  \____
+       /            \                  /            \
+     5               15              25              35
+    /  \            /  \            /  \            /  \
+   /    \          /    \          /    \          /    \
+ 2       8       13      17      23      27      33      37
+
+*/
 package nbtree
 
-//
-// Binary search tree
-//
+// BSTree implements a binary search tree.
 type BSTree struct {
 	root	*BSTNode
 }
 
+// NewBSTree returns new empty binary search tree.
 func NewBSTree() *BSTree {
 	return &BSTree{}
 }
 
+// Search returns a tree node with key k or nil if there is no such node.
 func (t *BSTree) Search(k KeyType) *BSTNode {
 	n := t.root
 	for n != nil && n.key != k {
@@ -24,10 +48,12 @@ func (t *BSTree) Search(k KeyType) *BSTNode {
 	return n
 }
 
+// Root returns the root node of the binary search tree, or nil if the tree is empty.
 func (t *BSTree) Root() *BSTNode {
 	return t.root
 }
 
+// Min returns the tree node with the minimum key value.
 func (t *BSTree) Min() *BSTNode {
 	if t.root == nil {
 		return nil
@@ -39,6 +65,7 @@ func (t *BSTree) Min() *BSTNode {
 	return n
 }
 
+// Max returns the tree node with the maximum key value.
 func (t *BSTree) Max() *BSTNode {
 	if t.root == nil {
 		return nil
@@ -50,6 +77,9 @@ func (t *BSTree) Max() *BSTNode {
 	return n
 }
 
+// Successor returns the tree node following node n in a linear ordering of
+// tree nodes in ascending order of their keys. If there is none, i.e. n has a
+// maximal key value, then nil is returned.
 func (t *BSTree) Successor(n *BSTNode) *BSTNode {
 	// If node has right sub-tree
 	if n.right != nil {
@@ -71,6 +101,9 @@ func (t *BSTree) Successor(n *BSTNode) *BSTNode {
 	return p
 }
 
+// Predecessor returns the tree node following node n in a linear ordering of
+// tree nodes in descending order of their keys. If there is none, i.e. n has a
+// minimum key value, then nil is returned.
 func (t *BSTree) Predecessor(n *BSTNode) *BSTNode {
 	// If node has left sub-tree
 	if n.left != nil {
@@ -93,7 +126,7 @@ func (t *BSTree) Predecessor(n *BSTNode) *BSTNode {
 }
 
 // SearchWithParent returns as the first value a node with k if found or nil if not found,
-// as the second - parent of the found node even if the node was not found
+// as the second - parent of the found node even if the node was not found.
 func (t *BSTree) SearchWithParent(k KeyType) (*BSTNode, *BSTNode) {
 	n := t.root
 	p := n.parent
@@ -109,6 +142,7 @@ func (t *BSTree) SearchWithParent(k KeyType) (*BSTNode, *BSTNode) {
 	return n, p
 }
 
+// Insert node n into the tree keeping the properties of the binary search tree.
 func (t *BSTree) Insert(n *BSTNode) *BSTNode { //nolint:varnamelen // n is too obvious to make it longer
 	// Check for empty tree
 	if t.root == nil {
@@ -141,6 +175,7 @@ func (t *BSTree) Insert(n *BSTNode) *BSTNode { //nolint:varnamelen // n is too o
 }
 
 //nolint:cyclop // Not sure that code will be more clear if this function is split into several
+// Delete deletes the node n from the tree keeping the properties of the binary search tree.
 func (t *BSTree) Delete(n *BSTNode) *BSTNode { //nolint:varnamelen // n is too obvious to make it longer
 	// Choose type of deletion
 	switch {
