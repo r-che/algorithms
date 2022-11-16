@@ -65,3 +65,20 @@ func (n *RBNode) Flip() {
 		n.color = !n.color
 	}
 }
+
+// Key returns the key value of the node
+func (n *RBNode) Key() KeyType {
+	if n == nil {
+		return FakeNode
+	}
+	return n.key
+}
+
+// Value returns the data associated with the node
+func (n *RBNode) Value() any {
+	if n == nil {
+		return nil
+	}
+
+	return n.data
+}
