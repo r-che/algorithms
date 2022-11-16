@@ -2,6 +2,9 @@ package rbtree
 
 import "fmt"
 
+// SelfTest performs a self-test of the red-black tree and returns the black-height,
+// and a description of the problem if detected. If an issuse is detected, the
+// black-height is zero.
 func (t *RBTree) SelfTest() (int, error) {
 	if t.root.Color() != Black {
 		return 0, fmt.Errorf("v#5: tree root (%v) is NOT black", t.root)
