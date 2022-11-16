@@ -1,4 +1,4 @@
-Not balanced binary search tree
+Red-black tree
 ===============================
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/r-che/algorithms/bst/rbtree/rbtree.svg)](https://pkg.go.dev/github.com/r-che/algorithms/bst/rbtree)
