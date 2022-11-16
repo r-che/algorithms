@@ -57,3 +57,31 @@ func swapColors(n1, n2 *RBNode) {
 	}
 	n1.color, n2.color = n2.color, n1.color
 }
+
+// straightLine returns true if child c is added to parent f on the same side that f is added as child to g
+func straightLine(c, f, g *RBNode) bool {
+	if c == f.left && f == g.left ||
+	   c == f.right && f == g.right {
+		// Straight line c->f->g
+		return true
+	}
+
+	// Not straight
+	return false
+}
+
+func determineRelatedness(n *RBNode) (f, u, g *RBNode) {
+	f = n.parent	// father of n
+	g = f.parent	// grandfather of n
+
+	// Determine uncle of n
+	if g.left == f {
+		// Uncle is right child of "grandfather"
+		u = g.right
+	} else {
+		// Uncle is left child of parent
+		u = g.left
+	}
+
+	return f, u, g
+}

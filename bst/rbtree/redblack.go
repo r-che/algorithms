@@ -42,55 +42,18 @@ func (t *RBTree) fixupIns(n *RBNode) {	//nolint:varnamelen	// variable name too 
 	// Red-violation - red node attached to red parent, fixup is required
 	//
 
-	// straightLine returns true if child c is added to parent f
-	// on the same side that f is added as child to g
-	straightLine := func(c, f, g *RBNode) bool {
-		if c == f.left && f == g.left ||
-		   c == f.right && f == g.right {
-			// Straight line c->f->g
-			return true
-		}
-
-		// Not straight
-		return false
-	}
-
-
 	//nolint:varnamelen	// variable names markings too obvious to make them longer
 	for {
 		// DBG-print: fmt.Printf("[FIXUP INS]: n: %v f: %v\n", n, n.parent)
-		// Get n's relations
-		f := n.parent	// father of n
-		g := f.parent	// grandfather of n
-		var u *RBNode	// uncle of n
-		if g.left == f {
-			// Uncle is right child of "grandfather"
-			u = g.right
-		} else {
-			// Uncle is left child of parent
-			u = g.left
-		}
+		// Get n's relatedness
+		f, u, g := determineRelatedness(n)
 
 		// Do fixup operations
 		switch {
 		// Red uncle
 		case u.Color() == Red:
-			// DBG-print: fmt.Printf("[U RED] n: %v u: %v\n", n, u)
-			// Only a repaint is required
-			f.color = Black
-			u.color = Black
-			// Is g root?
-			if g == t.root {
-				// Root always black, stop repainting
-				return
-			}
-
-			// Else - repaint g to red
-			g.color = Red	// this may cause new red-violation
-
-			// Check for new red-violation
-			if g.parent.color != Red {
-				// No violation, stop fixup
+			if contFixup := t.fixupRedUncle(f, u, g); !contFixup {
+				// Stop fixup
 				return
 			}
 
@@ -99,42 +62,16 @@ func (t *RBTree) fixupIns(n *RBNode) {	//nolint:varnamelen	// variable name too 
 
 		// Black uncle and n->f->g is a straight line
 		case u.Color() == Black && straightLine(n, f, g):
-			// DBG-print: fmt.Printf("[U BLACK, STRAIGHT] n: %v f: %v g: %v\n", n, f, g)
-			// Repaint nodes
-			f.color = Black
-			g.color = Red
-
-			// Now, need rotate g around f
-
-			// Define rotation direction and rotate
-			if f == g.left {
-				// f is a left child of g - need to rotate right
-				t.rotate(Right, g, f)
-			} else {
-				// f is a right child of g - need to rotate left
-				t.rotate(Left, g, f)
-			}
+			// Fixup nodes
+			t.fixupBlackUncleStraight(f, g)
 
 			// No more fixups required
 			return
 
 		// Black uncle and n->f->g is angle (not a straight line)
 		case u.Color() == Black && !straightLine(n, f, g):
-			// DBG-print: fmt.Printf("[U BLACK, ANGLE] n: %v f: %v g: %v\n", n, f, g)
-			// Repaint nodes
-			g.color = Red
-			n.color = Black
-
-			// Now, double rotation is required
-
-			// Define rotation direction and rotate
-			if f == g.left {
-				// f is a left child of g - need to rotate left+right
-				t.rotateDouble(LeftRight, g, f)
-			} else {
-				// f is a right child of g - need to rotate right+left
-				t.rotateDouble(RightLeft, g, f)
-			}
+			// Fixup nodes
+			t.fixupBlackUncleAngle(n, f, g)
 
 			// No more fixups required
 			return
@@ -142,6 +79,64 @@ func (t *RBTree) fixupIns(n *RBNode) {	//nolint:varnamelen	// variable name too 
 		default:
 			panic(fmt.Sprintf("Unexpected state on nodes: n: %v f: %v g: %v u: %v", n, f, g, u))
 		}
+	}
+}
+
+// fixupRedUncle fixes tree when uncle color is red
+func (t *RBTree) fixupRedUncle(f, u, g *RBNode) bool {
+	// DBG-print: fmt.Printf("[U RED] n: %v u: %v\n", n, u)
+	// Only a repaint is required
+	f.color = Black
+	u.color = Black
+
+	// Is g root?
+	if g == t.root {
+		// Root always black, stop repainting and fixup
+		return false
+	}
+
+	// Else - repaint g to red
+	g.color = Red	// this may cause new red-violation
+
+	// Return result of the check for new red-violation
+	return g.parent.color == Red
+}
+
+// fixupBlackUncleStraight fixes tree when: black uncle and n->f->g is a straight line
+func (t *RBTree) fixupBlackUncleStraight(f, g *RBNode) {
+	// DBG-print: fmt.Printf("[U BLACK, STRAIGHT] n: %v f: %v g: %v\n", n, f, g)
+	// Repaint nodes
+	f.color = Black
+	g.color = Red
+
+	// Now, need rotate g around f
+
+	// Define rotation direction and rotate
+	if f == g.left {
+		// f is a left child of g - need to rotate right
+		t.rotate(Right, g, f)
+	} else {
+		// f is a right child of g - need to rotate left
+		t.rotate(Left, g, f)
+	}
+}
+
+// fixupBlackUncleAngle fixes tree when: black uncle and n->f->g is angle (not a straight line)
+func (t *RBTree) fixupBlackUncleAngle(n, f, g *RBNode) {
+	// DBG-print: fmt.Printf("[U BLACK, ANGLE] n: %v f: %v g: %v\n", n, f, g)
+	// Repaint nodes
+	g.color = Red
+	n.color = Black
+
+	// Now, double rotation is required
+
+	// Define rotation direction and rotate
+	if f == g.left {
+		// f is a left child of g - need to rotate left+right
+		t.rotateDouble(LeftRight, g, f)
+	} else {
+		// f is a right child of g - need to rotate right+left
+		t.rotateDouble(RightLeft, g, f)
 	}
 }
 
