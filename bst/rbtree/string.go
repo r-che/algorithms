@@ -10,9 +10,7 @@ const (
 	CircleRed	=	"\u2B24"
 	CircleBlack	=	"\u25CB"
 	TermRed		=	"\u001b[31m"
-	//TermRed		=	"\u001b[31;1m"
 	TermBlack	=	"\u001b[37;1m"
-	//TermBlack	=	"\u001b[30;1m"
 	TermRst		=	"\u001b[0m"
 
 	// Empty tree stub

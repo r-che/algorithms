@@ -7,14 +7,14 @@ import "fmt"
 //
 type Rotate int
 const (
-	L =	Rotate(iota + 1)
-	R
+	Left =	Rotate(iota + 1)
+	Right
 )
 
 func (r Rotate) String() string {
 	switch r {
-		case L:		return "L"
-		case R:		return "R"
+		case Left:		return "Left"
+		case Right:		return "Right"
 	}
 
 	panic(fmt.Sprintf("Unexpected rotate value: %d", r))
@@ -25,14 +25,14 @@ func (r Rotate) String() string {
 //
 type RotateDouble Rotate
 const (
-	LR	=	RotateDouble(R + 1 + iota)
-	RL
+	LeftRight	=	RotateDouble(Right + 1 + iota)
+	RightLeft
 )
 
 func (r RotateDouble) String() string {
 	switch r {
-		case LR:	return "LR"
-		case RL:	return "RL"
+		case LeftRight:	return "LeftRight"
+		case RightLeft:	return "RightLeft"
 	}
 
 	panic(fmt.Sprintf("Unexpected rotate value: %d", r))
@@ -45,20 +45,20 @@ func (r RotateDouble) String() string {
 func (t *RBTree) rotateDouble(rType RotateDouble, pivot, node *RBNode) {
 	// DBG-print: fmt.Printf("[ROTATE] %s - pivot: %s child: %s\n", rType, pivot, node)
 	switch rType {
-		case LR:
+		case LeftRight:
 			// Do left rotation using node as pivot
 			nextNode := node.right
-			t.rotate(L, node, nextNode)
+			t.rotate(Left, node, nextNode)
 
 			// Do right rotation around pivot, using next node as left child node of pivot
-			t.rotate(R, pivot, nextNode)
-		case RL:
+			t.rotate(Right, pivot, nextNode)
+		case RightLeft:
 			// Do right rotation using node as pivot
 			nextNode := node.left
-			t.rotate(R, node, nextNode)
+			t.rotate(Right, node, nextNode)
 
 			// Do left rotation around pivot, using next node as left child node of pivot
-			t.rotate(L, pivot, nextNode)
+			t.rotate(Left, pivot, nextNode)
 		default:
 			panic(fmt.Sprintf("Unsupported rotation type: %d", rType))
 	}
@@ -67,7 +67,7 @@ func (t *RBTree) rotateDouble(rType RotateDouble, pivot, node *RBNode) {
 func (t *RBTree) rotate(rType Rotate, pivot, node *RBNode) {
 	// Select rotate type
 	switch rType {
-		case L:
+		case Left:
 			// Attach left child of node to right of pivot
 			pivot.right = node.left
 			if node.left != nil {
@@ -77,7 +77,7 @@ func (t *RBTree) rotate(rType Rotate, pivot, node *RBNode) {
 			// Make pivot left child of the node
 			node.left = pivot
 
-		case R:
+		case Right:
 			// Attach right child of node to left of pivot
 			pivot.left = node.right
 			if node.right != nil {
@@ -88,7 +88,7 @@ func (t *RBTree) rotate(rType Rotate, pivot, node *RBNode) {
 			node.right = pivot
 
 		default:
-			panic(`Unsupported rotation type "` + rType.String() + `" in rotate(), must be only L or R`)
+			panic(`Unsupported rotation type "` + rType.String() + `" in rotate(), must be only Left or Right`)
 	}
 
 	// Update parents

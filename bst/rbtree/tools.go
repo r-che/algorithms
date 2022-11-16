@@ -36,13 +36,12 @@ func (n *RBNode) test() (int, error) {
 	// Test current node color
 	if n.color == Black {
 		bhl++
-	} else {
-		// Red node, need to check children colors - both must be Red
-		if n.left.Color() != Black || n.right.Color() != Black {
-			return 0, fmt.Errorf(
-				"v#3: Red node (%v) has non-Black child (left: %v, right: %v)",
-				n, n.left, n.right)
-		}
+	} else
+	// Red node, need to check children colors - both must be Red
+	if n.left.Color() != Black || n.right.Color() != Black {
+		return 0, fmt.Errorf(
+			"v#3: Red node (%v) has non-Black child (left: %v, right: %v)",
+			n, n.left, n.right)
 	}
 
 	// OK

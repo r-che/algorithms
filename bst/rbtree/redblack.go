@@ -32,7 +32,7 @@ func (t *RBTree) Insert(n *RBNode) *RBNode {
 	return n
 }
 
-func (t *RBTree) fixupIns(n *RBNode) {
+func (t *RBTree) fixupIns(n *RBNode) {	//nolint:varnamelen	// variable name too obvious to make it longer
 	if n.parent.color == Black {
 		// Nothing to fixup
 		return
@@ -56,6 +56,7 @@ func (t *RBTree) fixupIns(n *RBNode) {
 	}
 
 
+	//nolint:varnamelen	// variable names markings too obvious to make them longer
 	for {
 		// DBG-print: fmt.Printf("[FIXUP INS]: n: %v f: %v\n", n, n.parent)
 		// Get n's relations
@@ -108,10 +109,10 @@ func (t *RBTree) fixupIns(n *RBNode) {
 			// Define rotation direction and rotate
 			if f == g.left {
 				// f is a left child of g - need to rotate right
-				t.rotate(R, g, f)
+				t.rotate(Right, g, f)
 			} else {
 				// f is a right child of g - need to rotate left
-				t.rotate(L, g, f)
+				t.rotate(Left, g, f)
 			}
 
 			// No more fixups required
@@ -129,10 +130,10 @@ func (t *RBTree) fixupIns(n *RBNode) {
 			// Define rotation direction and rotate
 			if f == g.left {
 				// f is a left child of g - need to rotate left+right
-				t.rotateDouble(LR, g, f)
+				t.rotateDouble(LeftRight, g, f)
 			} else {
 				// f is a right child of g - need to rotate right+left
-				t.rotateDouble(RL, g, f)
+				t.rotateDouble(RightLeft, g, f)
 			}
 
 			// No more fixups required
@@ -144,7 +145,7 @@ func (t *RBTree) fixupIns(n *RBNode) {
 	}
 }
 
-func (t *RBTree) fixupDel(d *RBNode) {
+func (t *RBTree) fixupDel(d *RBNode) {	//nolint:varnamelen	// variable name too obvious to make it longer
 	//
 	// Simple fixup cases
 	//
@@ -155,8 +156,9 @@ func (t *RBTree) fixupDel(d *RBNode) {
 		return
 	}
 
+	var n *RBNode //nolint:varnamelen	// n has too common meaning to make its name longer
+
 	// XXX Deleted node can have only 0 or 1 child
-	var n *RBNode	// child of deleted node
 	if n = d.left; n == nil {
 		if n = d.right; n == nil {
 			// XXX Eventually n is nil, assign to n fake node
@@ -193,8 +195,9 @@ func (t *RBTree) fixupDel(d *RBNode) {
 	// More complex fixup
 	//
 
-	var f *RBNode
+	var f *RBNode //nolint:varnamelen	// variable name too obvious to make it longer
 
+	//nolint:varnamelen	// variable names markings too obvious to make them longer
 	for {
 		// Define "family" relationship
 		f = n.parent	// "father"
@@ -210,17 +213,16 @@ func (t *RBTree) fixupDel(d *RBNode) {
 			// n left of f => New brother is right node of f
 			b = f.right
 			// Define turns directions
-			turn24 = L
-			turn3 = R
+			turn24 = Left
+			turn3 = Right
 			// Assign children to left case
-			fmt.Printf("\n  === b %v\n\n", b)
 			/* n, */ cn, cf = /* n, */ b.left, b.right
 		} else {
 			// n right of f => new brother is left node of f
 			b = f.left
 			// Define turns directions
-			turn24 = R
-			turn3 = L
+			turn24 = Right
+			turn3 = Left
 			// Assign children to right case
 			cf, cn /*, n */ = b.left, b.right /*, n */
 		}
