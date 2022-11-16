@@ -71,6 +71,7 @@ func (n *RBNode) SetColor(color ColorType) {
 	}
 }
 
+// Flip reverses node color: Red to Black or Black to Red.
 func (n *RBNode) Flip() {
 	if n != nil {
 		n.color = !n.color
