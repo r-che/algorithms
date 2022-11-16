@@ -148,78 +148,90 @@ func (t *RBTree) bstInsert(n *RBNode) (*RBNode, bool) { //nolint:varnamelen // n
 	return n, true
 }
 
-//nolint:cyclop // Not sure that code will be more clear if this function is split into several
-func (t *RBTree) bstDelete(n *RBNode) *RBNode { //nolint:varnamelen // n is too obvious to make it longer
+func (t *RBTree) bstDelete(n *RBNode) *RBNode {
 	// Choose type of deletion
 	switch {
 	// Node has TWO children
 	case n.left != nil && n.right != nil:
-		// Get successor of nPtr - this node will repalce nPtr
-		s := t.Successor(n)
-
-		// Remove s from its position - s can point only to
-		// leaf node or to node that has only one right-child
-		t.bstDelete(s)
-
-		// if n == t.root {
-		// 	fmt.Printf("Tree root updated[2]: %v -> %v\n", n, s)
-		// }
-
-		// Now s extracted from tree, need to replace n by s, do inplace update
-		n.key = s.key
-		n.data = s.data
-
-		// Replace value of n to return s as pointer to really removed node
-		n = s
+		// Return successor from delChildren, as pointer to really removed node
+		return t.delChildren(n)
 
 	// Node is leaf - NO children
 	case n.left == nil && n.right == nil:
-		// Check for n is root of the tree
-		if n == t.root {
-			// Cleanup root
-			t.root = nil
-
-			// Empty tree, nothing to fixup - return now
-			return n
-		}
-
-		// Clear parent's pointer to n
-		if n.parent.left == n {
-			n.parent.left = nil
-		} else {
-			n.parent.right = nil
-		}
+		return t.delLeaf(n)
 
 	// Node has one child
 	default:
-		// Get n's single child
-		var child *RBNode
-		if n.left != nil {
-			child = n.left
-		} else {
-			child = n.right
-		}
+		return t.delChild(n)
+	}
+}
 
-		// Replace parent value of the child node
-		child.parent = n.parent
+func (t *RBTree) delChildren(n *RBNode) *RBNode {
+	// Get successor of nPtr - this node will repalce nPtr
+	s := t.Successor(n)
 
-		if n.parent == nil {
-			// fmt.Printf("Tree root updated[1]: %v -> %v\n", n, child)
-			// Replace root
-			t.root = child
+	// Remove s from its position - s can point only to
+	// leaf node or to node that has only one right-child
+	t.bstDelete(s)
 
-			// Break to return n as is
-			break
-		}
+	// if n == t.root {
+	// 	fmt.Printf("Tree root updated[2]: %v -> %v\n", n, s)
+	// }
 
-		// Assign child as child of n's parent
-		if n.parent.left == n {
-			n.parent.left = child
-		} else {
-			n.parent.right = child
-		}
+	// Now s extracted from tree, need to replace n by s, do inplace update
+	n.key = s.key
+	n.data = s.data
 
-		// n is deleted now
+	// Return successor s as pointer to really removed node
+	return s
+}
+
+func (t *RBTree) delLeaf(n *RBNode) *RBNode {
+	// Check for n is root of the tree
+	if n == t.root {
+		// Cleanup root
+		t.root = nil
+
+		// Empty tree, nothing to fixup - return now
+		return n
+	}
+
+	// Clear parent's pointer to n
+	if n.parent.left == n {
+		n.parent.left = nil
+	} else {
+		n.parent.right = nil
+	}
+
+	return n
+}
+
+func (t *RBTree) delChild(n *RBNode) *RBNode { //nolint:varnamelen // n is too obvious to make it longer
+	// Get n's single child
+	var child *RBNode
+	if n.left != nil {
+		child = n.left
+	} else {
+		child = n.right
+	}
+
+	// Replace parent value of the child node
+	child.parent = n.parent
+
+	if n.parent == nil {
+		// fmt.Printf("Tree root updated[1]: %v -> %v\n", n, child)
+		// Replace root
+		t.root = child
+
+		// Return n as is
+		return n
+	}
+
+	// Assign child as child of n's parent
+	if n.parent.left == n {
+		n.parent.left = child
+	} else {
+		n.parent.right = child
 	}
 
 	return n
