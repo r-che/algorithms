@@ -18,12 +18,12 @@ const (
 )
 
 func (ct ColorType) String() string {
-	switch ct {
-		case Red:	return TermRed + CircleRed + TermRst
-		case Black:	return TermBlack + CircleBlack + TermRst
-		default:
-			panic("It is not possible - third boolean value!")
+	if ct == Red {
+		return TermRed + CircleRed + TermRst
 	}
+
+	// Else - black
+	return TermBlack + CircleBlack + TermRst
 }
 
 const circlePrintableWidth = 1

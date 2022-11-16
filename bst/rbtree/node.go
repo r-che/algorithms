@@ -3,12 +3,21 @@ package rbtree
 import "fmt"
 
 type KeyType int
-const FakeNode = KeyType(-1)
+const (
+	FakeNode		=	KeyType(-1)
+	strFakeNode		=	`<>`
+	strInvalidNode	=	`<invalid>`
+)
+
 func (k KeyType) String() string {
-	if k == FakeNode {
-		return "<>"
+	switch {
+	case k == FakeNode:
+		return strFakeNode
+	case k < 0:
+		return strInvalidNode
+	default:
+		return fmt.Sprintf("%d", k)
 	}
-	return fmt.Sprintf("%d", k)
 }
 
 type ColorType bool
@@ -38,13 +47,15 @@ func NewRBNode(key KeyType, data any) *RBNode {
 
 func (n *RBNode) String() string {
 	if n == nil {
-		return fmt.Sprintf("%s<nil>", Black)
+		return Black.String() + "<nil>"
 	}
 	if n.key == FakeNode {
-		return fmt.Sprintf("%s<FAKE>", Black)
+		return strFakeNode
 	}
-	return fmt.Sprintf("%s%d", n.color, n.key)
+
+	return n.color.String() + n.key.String()
 }
+
 func (n *RBNode) Color() ColorType {
 	if n == nil {
 		// Leaf always black
