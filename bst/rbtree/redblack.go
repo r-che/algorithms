@@ -151,38 +151,18 @@ func (t *RBTree) fixupDel(d *RBNode) {	//nolint:varnamelen	// variable name too 
 		return
 	}
 
-	var n *RBNode //nolint:varnamelen	// n has too common meaning to make its name longer
+	//nolint:varnamelen	// n has too common meaning to make its name longer
+	n, cleanFake := determChildOfDeleted(d)
 
-	// XXX Deleted node can have only 0 or 1 child
-	if n = d.left; n == nil {
-		if n = d.right; n == nil {
-			// XXX Eventually n is nil, assign to n fake node
-			n = &RBNode{
-				parent:	d.parent,
-				key:	FakeNode,
-			}
-
-			// Need to assign n to correct side of d.parent
-			// XXX We can safely remove fake node from f (assign nil to child pointer)
-			// XXX when returning from the function, because there is no combination that
-			// XXX can replace the values of f pointers with some other node(s)
-			if d.parent.left == nil {
-				// d was removed from left side, assign n as left child
-				d.parent.left = n
-				defer func() { d.parent.left = nil }()
-			} else {
-				// Otherwise - d was right child of its parent
-				d.parent.right = n
-				defer func() { d.parent.right = nil }()
-			}
-		}
-	}
+	// Defer cleanup of fake node if it was created
+	defer cleanFake()
 
 	// If child of deleted node is Red - only repaint required
 	if n.color == Red {
 		// DBG-print: fmt.Printf("[CASE #0:REPAINT] N: %v -> %v\n", n, Black)
 		// Repaint to Black and return
 		n.color = Black
+
 		return
 	}
 
@@ -190,147 +170,167 @@ func (t *RBTree) fixupDel(d *RBNode) {	//nolint:varnamelen	// variable name too 
 	// More complex fixup
 	//
 
-	var f *RBNode //nolint:varnamelen	// variable name too obvious to make it longer
-
 	//nolint:varnamelen	// variable names markings too obvious to make them longer
-	for {
-		// Define "family" relationship
-		f = n.parent	// "father"
+	for n != nil {
+		// Determine participants of fixup
+		f, b, cn, cf := determParticipants(n)
 
-		var b *RBNode		// new brother of child of deleted node
-		// Turns' directions
-		var turn24, turn3 Rotate
-		// b children to use in conditions
-		var cn *RBNode	// nearside child of b
-		var cf *RBNode	// far side child of b
+		// Determine turns
+		turnCase2or4, turnCase3 := determTurns(n, f)
 
-		if f.left == n {
-			// n left of f => New brother is right node of f
-			b = f.right
-			// Define turns directions
-			turn24 = Left
-			turn3 = Right
-			// Assign children to left case
-			/* n, */ cn, cf = /* n, */ b.left, b.right
-		} else {
-			// n right of f => new brother is left node of f
-			b = f.left
-			// Define turns directions
-			turn24 = Right
-			turn3 = Left
-			// Assign children to right case
-			cf, cn /*, n */ = b.left, b.right /*, n */
-		}
-
-		// DBG-print: fmt.Printf("[RELS] N:%v F:%v B:%v Cn:%v Cf:%v, turn24:%v, turn3:%v\n",
-		// DBG-print:	n, f, b, cn, cf, turn24, turn3)
+		// DBG-print: fmt.Printf("[RELS] N:%v F:%v B:%v Cn:%v Cf:%v, turnCase2or4:%v, turnCase3:%v\n",
+		// DBG-print:	n, f, b, cn, cf, turnCase2or4, turnCase3)
 
 		switch {
 			// 1. f is Red, others are Black
-			case n.color == Black &&
-				f.color  == Red &&
-				b.Color()  == Black &&
-				cn.Color() == Black &&
-				cf.Color() == Black:
-				// DBG-print: fmt.Printf("[CASE #1:SWAP COLORS] F:%v <-> B:%v => ", f, b)
-				// Swap colors between f and b
-				swapColors(f, b)
-				// DBG-print: fmt.Printf("f:%v, b:%v\n", f, b)
-
-				// Stop fixup
+			case t.fixCase1(n, f, b, cn, cf):
 				return
 
 			// 2. b is Black, cf is Red
-			case b.Color() == Black &&
-				cf.Color() == Red:
-				// Label to other cases can call this
-				// DBG-print: fmt.Println("[CASE #2]")
-
-				// DBG-print: fmt.Printf("  [ROTATE] F:%v around B:%v to %v\n", f, b, turn24)
-				// 1. Rotate f around b
-				t.rotate(turn24, f, b)
-				// DBG-print: fmt.Println(t)
-
-				// DBG-print: fmt.Printf("  [REPAINT] Cf:%v -> %v\n", cf, Black)
-				// 2. Repainting cf to Black
-				cf.SetColor(Black)
-
-				// DBG-print: fmt.Printf("  [SWAP COLORS] F:%v <-> B:%v => ", f, b)
-				// 3. Swap colors between f and b
-				swapColors(f, b)
-				// DBG-print: fmt.Printf("F:%v, B:%v\n", f, b)
-
-				// Stop fixup
+			case t.fixCase2(b, cf, f, turnCase2or4):
 				return
 
 			// 3. b is Black, cf is Black, cn is Red
-			case b.Color() == Black &&
-				cn.Color() == Red &&
-				cf.Color() == Black:
-				// DBG-print: fmt.Println("[CASE #3]")
-
-				// DBG-print: fmt.Printf("  [ROTATE] B:%v around Cn:%v to %v\n", b, cn, turn3)
-				// Rotate b around cn
-				t.rotate(turn3, b, cn)
-				// DBG-print: fmt.Println(t)
-
-				// DBG-print: fmt.Printf("  [FLIP] B:%v -> %v, Cn:%v -> %v\n", b, !b.Color(), cn, !cn.Color())
-				// Flip colors of b and cn
-				b.Flip()
-				cn.Flip()
-
-				// Now situation brought to the case #2, required fixup
-				// will be done on the next iteration
+			case t.fixCase3(b, cn, cf, turnCase3):
+				// XXX Now situation brought to the case #2, required fixup will be done on the next iteration
 
 			// 4. b is Red
-			case b.Color()  == Red:
-				// DBG-print: fmt.Println("[CASE #4]")
-
-				// DBG-print: fmt.Printf("  [ROTATE] F:%v around B:%v to %v\n", f, b, turn24)
-				// Rotate f around b
-				t.rotate(turn24, f, b)
-				// DBG-print: fmt.Println(t)
-
-				// DBG-print: fmt.Printf("  [FLIP] F:%v -> %v, B:%v -> %v\n", f, !f.Color(), b, !b.Color())
-				// Flip colors of f and b
-				f.color = !f.color
-				b.Flip()
-
-				// Now situation brought to the cases #1..3, required fixup
-				// will be done on the next iteration
+			case t.fixCase4(f, b, turnCase2or4):
+				// XXX Now situation brought to the cases #1..3, required fixup will be done on the next iteration
 
 			// 5. All are Black
-			case n.color == Black &&
-				f.color  == Black &&
-				b.Color()  == Black &&
-				cn.Color() == Black &&
-				cf.Color() == Black:
-
+			case t.allBlack(n, f, b, cn, cf):
 				// DBG-print: fmt.Println("[CASE #5]")
 				// DBG-print: fmt.Printf("  [REPAINT] B:%v -> %v\n", b, Red)
-				// Repaint b to Red
-				b.SetColor(Red)
 
-				if b == t.root {
-					// Stop fixup process
-					return
-				}
-
-				// Check for f is tree root
-				if f == t.root {
-					// Fixup is done
-					return
-				}
-
-				// DBG-print: fmt.Printf("  [UPDATE] N = F:%v (continue fixup) on:\n", f)
-				// DBG-print: fmt.Println(t)
-
-				// Update n value by f and continue fixup
-				n = f
+				// Update n value by result of fixup
+				n = t.fixCase5(f, b)
 
 			default:
 				panic(fmt.Sprintf("Unexpected state on nodes: D: %v N: %v F: %v B: %v Cn: %v Cf: %v",
 					d, n, f, b, cn, cf))
 		}
 	}
+}
+
+func (t *RBTree) fixCase1(n, f, b, cn, cf *RBNode) bool {
+	if !(n.color == Black &&
+			f.color  == Red &&
+			b.Color()  == Black &&
+			cn.Color() == Black &&
+			cf.Color() == Black) {
+		// Another case
+		return false
+	}
+
+	// DBG-print: fmt.Printf("[CASE #1:SWAP COLORS] F:%v <-> B:%v => ", f, b)
+
+	// Swap colors between f and b
+	swapColors(f, b)
+	// DBG-print: fmt.Printf("f:%v, b:%v\n", f, b)
+
+	// Fixed
+	return true
+}
+
+func (t *RBTree) fixCase2(b, cf, f *RBNode, turn Rotate) bool {
+	if !(b.Color() == Black && cf.Color() == Red) {
+		// Another case
+		return false
+	}
+
+	// DBG-print: fmt.Println("[CASE #2]")
+
+	// DBG-print: fmt.Printf("  [ROTATE] F:%v around B:%v to %v\n", f, b, turnCase2or4)
+	// 1. Rotate f around b
+	t.rotate(turn, f, b)
+	// DBG-print: fmt.Println(t)
+
+	// DBG-print: fmt.Printf("  [REPAINT] Cf:%v -> %v\n", cf, Black)
+	// 2. Repainting cf to Black
+	cf.SetColor(Black)
+
+	// DBG-print: fmt.Printf("  [SWAP COLORS] F:%v <-> B:%v => ", f, b)
+	// 3. Swap colors between f and b
+	swapColors(f, b)
+	// DBG-print: fmt.Printf("F:%v, B:%v\n", f, b)
+
+	// Fixed
+	return true
+}
+
+func (t *RBTree) fixCase3(b, cn, cf *RBNode, turn Rotate) bool {
+	if !(b.Color() == Black &&
+		cn.Color() == Red &&
+		cf.Color() == Black) {
+		// Another case
+		return false
+	}
+
+	// DBG-print: fmt.Println("[CASE #3]")
+
+	// DBG-print: fmt.Printf("  [ROTATE] B:%v around Cn:%v to %v\n", b, cn, turnCase3)
+	// Rotate b around cn
+	t.rotate(turn, b, cn)
+	// DBG-print: fmt.Println(t)
+
+	// DBG-print: fmt.Printf("  [FLIP] B:%v -> %v, Cn:%v -> %v\n", b, !b.Color(), cn, !cn.Color())
+	// Flip colors of b and cn
+	b.Flip()
+	cn.Flip()
+
+	// Fixed
+	return true
+}
+
+func (t *RBTree) fixCase4(f, b *RBNode, turn Rotate) bool {
+	if !(b.Color() ==  Red) {
+		// Another case
+		return false
+	}
+	// DBG-print: fmt.Println("[CASE #4]")
+
+	// DBG-print: fmt.Printf("  [ROTATE] F:%v around B:%v to %v\n", f, b, turnCase2or4)
+	// Rotate f around b
+	t.rotate(turn, f, b)
+	// DBG-print: fmt.Println(t)
+
+	// DBG-print: fmt.Printf("  [FLIP] F:%v -> %v, B:%v -> %v\n", f, !f.Color(), b, !b.Color())
+	// Flip colors of f and b
+	f.color = !f.color
+	b.Flip()
+
+	// Fixed
+	return true
+}
+
+func (t *RBTree) allBlack(nodes ...*RBNode) bool {
+	for _, n := range nodes {
+		if n.Color() != Black {
+			return false
+		}
+	}
+
+	return true
+}
+
+func (t *RBTree) fixCase5(f, b *RBNode) *RBNode {
+	b.SetColor(Red)
+
+	if b == t.root {
+		// Stop fixup process
+		return nil
+	}
+
+	// Check for f is tree root
+	if f == t.root {
+		// Fixup is done
+		return nil
+	}
+
+	// DBG-print: fmt.Printf("  [UPDATE] N = F:%v (continue fixup) on:\n", f)
+	// DBG-print: fmt.Println(t)
+
+	// Return f to use it as next node to fixup
+	return f
 }
