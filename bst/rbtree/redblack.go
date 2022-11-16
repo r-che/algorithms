@@ -317,11 +317,6 @@ func (t *RBTree) allBlack(nodes ...*RBNode) bool {
 func (t *RBTree) fixCase5(f, b *RBNode) *RBNode {
 	b.SetColor(Red)
 
-	if b == t.root {
-		// Stop fixup process
-		return nil
-	}
-
 	// Check for f is tree root
 	if f == t.root {
 		// Fixup is done

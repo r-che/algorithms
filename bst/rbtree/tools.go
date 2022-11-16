@@ -49,12 +49,6 @@ func (n *RBNode) test() (int, error) {
 }
 
 func swapColors(n1, n2 *RBNode) {
-	if n1 == nil {
-		n1 = &RBNode{}
-	}
-	if n2 == nil {
-		n2 = &RBNode{}
-	}
 	n1.color, n2.color = n2.color, n1.color
 }
 
